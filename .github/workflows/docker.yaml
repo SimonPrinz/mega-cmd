@@ -1,0 +1,42 @@
+name: Build Docker image
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  pull_request:
+    branches: [main]
+
+env:
+  IMAGE_NAME: ghcr.io/simonprinz/mega-cmd
+
+jobs:
+  build-latest:
+    if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'main'
+    env:
+      VERSION: latest
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v1
+      - name: 🔐 Login to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $ --password-stdin
+      - name: 🚧 Build the Docker image
+        run: docker build . -t ${IMAGE_NAME}:${VERSION}
+      - name: ⤴️ Push the Docker image to GitHub Container Registry
+        run: docker push ${IMAGE_NAME}:${VERSION}
+  build-tag:
+    if: github.event_name == 'release' && github.ref_type == 'tag'
+    env:
+      VERSION: ${GITHUB_REF:11}
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v1
+      - name: 🔐 Login to GitHub Container Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $ --password-stdin
+      - name: 🚧 Build the Docker image
+        run: docker build . -t ${IMAGE_NAME}:${VERSION}
+      - name: ⤴️ Push the Docker image to GitHub Container Registry
+        run: docker push ${IMAGE_NAME}:${VERSION}
